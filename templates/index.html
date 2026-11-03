@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rollcall — Student Attendance Management</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═════════ SIDEBAR ═════════ -->
+  <aside class="rail">
+    <div class="brand">
+      <span class="brand-mark">R<i></i></span>
+      <div><b>Rollcall</b><small id="instName">Attendance Suite</small></div>
+    </div>
+
+    <div class="me" onclick="go('settings')" title="Edit profile in Settings">
+      <div class="ring">
+        <img id="meImg" alt="" style="display:none">
+        <span id="meInitial">A</span>
+      </div>
+      <div><b id="meName">Admin</b><small id="meRole">Administrator</small></div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button class="active" data-view="dashboard" onclick="go('dashboard')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>Dashboard
+      </button>
+      <button data-view="students" onclick="go('students')">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.8 0 4.5 1.8 4.5 4.5"/></svg>Students
+      </button>
+      <button data-view="attendance" onclick="go('attendance')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>Mark Attendance
+      </button>
+      <button data-view="reports" onclick="go('reports')">
+        <svg viewBox="0 0 24 24"><path d="M4 20V11M10 20V4M16 20v-6M22 20H2"/></svg>Reports
+      </button>
+      <button data-view="settings" onclick="go('settings')">
+        <svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Settings
+      </button>
+    </nav>
+
+    <div class="rail-foot">
+      <div class="thresh">
+        <span>Minimum attendance</span>
+        <b id="railThreshold">75%</b>
+        <div class="thresh-bar"><i id="railBar" style="width:75%"></i></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═════════ MAIN ═════════ -->
+  <main class="stage">
+
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Dashboard</h1>
+        <p id="pageSub">A clear view of attendance across your institution</p>
+      </div>
+      <div class="top-actions">
+        <span class="date-chip" id="dateChip"></span>
+        <button class="btn primary" onclick="openDrawer()">+ New Student</button>
+      </div>
+    </header>
+
+    <!-- ───────── DASHBOARD ───────── -->
+    <section class="view active" id="view-dashboard">
+      <div class="hero">
+        <div class="hero-text">
+          <span class="eyebrow" id="heroDate"></span>
+          <h2 id="heroTitle">Good day</h2>
+          <p id="heroText"></p>
+          <div class="hero-actions">
+            <button class="btn dark" onclick="go('attendance')">Mark today's attendance</button>
+            <button class="btn ghost" onclick="go('reports')">Open reports</button>
+          </div>
+        </div>
+        <div class="hero-art" id="heroArt"></div>
+      </div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-h"><h3>Last 7 days</h3><span class="hint">Share of marked students who attended</span></div>
+          <div class="bars" id="weekChart"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Today at a glance</h3><span class="hint">All enrolled students</span></div>
+          <div id="todayDonut"></div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-h"><h3>Course-wise attendance</h3></div>
+          <div id="courseBars"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Needs attention</h3><span class="hint" id="lowHint"></span></div>
+          <div id="lowList"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h3>Top attendance</h3><span class="hint">Most consistent</span></div>
+          <div id="topList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── STUDENTS ───────── -->
+    <section class="view" id="view-students">
+      <div class="toolbar card">
+        <div class="search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="sSearch" placeholder="Search by name or roll number" oninput="renderStudents()">
+        </div>
+        <select id="sCourse" onchange="renderStudents()"></select>
+        <select id="sSection" onchange="renderStudents()">
+          <option value="">All sections</option><option>A</option><option>B</option><option>C</option><option>D</option>
+        </select>
+        <select id="sYear" onchange="renderStudents()">
+          <option value="">All years</option><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option>
+        </select>
+        <span class="count" id="sCount"></span>
+      </div>
+      <div class="sgrid" id="studentGrid"></div>
+    </section>
+
+    <!-- ───────── MARK ATTENDANCE ───────── -->
+    <section class="view" id="view-attendance">
+      <div class="toolbar card">
+        <div class="datepick">
+          <button class="icon-btn" onclick="shiftDay(-1)" title="Previous day">‹</button>
+          <input type="date" id="aDate" onchange="dateChanged()">
+          <button class="icon-btn" onclick="shiftDay(1)" title="Next day">›</button>
+        </div>
+        <select id="aCourse" onchange="renderAttendance()"></select>
+        <select id="aSection" onchange="renderAttendance()">
+          <option value="">All sections</option><option>A</option><option>B</option><option>C</option><option>D</option>
+        </select>
+        <div class="search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="aSearch" placeholder="Find student" oninput="renderAttendance()">
+        </div>
+      </div>
+
+      <div class="bulkbar card">
+        <div class="chips" id="aSummary"></div>
+        <div class="bulk-actions">
+          <button class="btn small" onclick="markAll('Present')">All present</button>
+          <button class="btn small" onclick="markAll('Absent')">All absent</button>
+          <button class="btn small ghost" onclick="markAll('')">Clear</button>
+          <button class="btn primary" onclick="saveAttendance()">Save attendance</button>
+        </div>
+      </div>
+
+      <div class="alist" id="aList"></div>
+    </section>
+
+    <!-- ───────── REPORTS ───────── -->
+    <section class="view" id="view-reports">
+      <div class="toolbar card">
+        <select id="rCourse" onchange="renderReport()"></select>
+        <select id="rSection" onchange="renderReport()">
+          <option value="">All sections</option><option>A</option><option>B</option><option>C</option><option>D</option>
+        </select>
+        <label class="datefield">From <input type="date" id="rFrom" onchange="renderReport()"></label>
+        <label class="datefield">To <input type="date" id="rTo" onchange="renderReport()"></label>
+        <div class="search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="rSearch" placeholder="Search student" oninput="renderReport()">
+        </div>
+        <label class="switch"><input type="checkbox" id="rLow" onchange="renderReport()"><span></span>Below minimum only</label>
+      </div>
+
+      <div class="stats small" id="rStats"></div>
+
+      <div class="card table-card">
+        <div class="card-h">
+          <h3>Attendance register</h3>
+          <div class="bulk-actions">
+            <button class="btn small" onclick="exportCSV()">Export CSV</button>
+            <button class="btn small dark" onclick="window.print()">Print</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Student</th><th>Roll</th><th>Course</th><th>Sec</th><th>Present</th><th>Absent</th><th>Late</th><th>Excused</th><th class="wide">Attendance</th><th>Status</th></tr></thead>
+            <tbody id="rBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── SETTINGS ───────── -->
+    <section class="view" id="view-settings">
+      <div class="grid-settings">
+        <div class="card">
+          <div class="card-h"><h3>Your profile</h3></div>
+          <div class="card-b">
+            <div class="photo-row">
+              <label class="photo-pick" for="adminPhoto">
+                <div class="ring xl"><img id="setImg" alt="" style="display:none"><span id="setInitial">A</span></div>
+                <div><b>Profile photo</b><small>Click to upload · square crop</small></div>
+              </label>
+              <input type="file" id="adminPhoto" accept="image/*" hidden onchange="pickPhoto(this, d => { tmpAdminPhoto = d; $('setImg').src = d; $('setImg').style.display = 'block'; $('setInitial').style.display = 'none'; })">
+            </div>
+            <div class="form-grid">
+              <div class="field"><label>Full name</label><input id="setAdmin"></div>
+              <div class="field"><label>Role / designation</label><input id="setRole"></div>
+              <div class="field span2"><label>Institution name</label><input id="setInst"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Attendance rules</h3></div>
+          <div class="card-b">
+            <div class="field">
+              <label>Minimum attendance required <b id="setThreshVal" class="inline-val"></b></label>
+              <input type="range" id="setThresh" min="50" max="95" step="1" oninput="$('setThreshVal').textContent = this.value + '%'">
+              <small class="note">Students below this value are flagged on the dashboard and reports. Excused days are not counted against a student; Late counts as attended.</small>
+            </div>
+            <div class="field">
+              <label>Courses offered (comma separated)</label>
+              <textarea id="setCourses" rows="3"></textarea>
+            </div>
+            <div class="settings-actions">
+              <button class="btn primary" onclick="saveSettings()">Save settings</button>
+              <button class="btn" onclick="loadSample()">Load sample students</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═════════ ADD STUDENT DRAWER ═════════ -->
+<div class="overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-h">
+    <div><h3>New student</h3><small>Complete profile with photo</small></div>
+    <button class="icon-btn" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-b">
+    <label class="photo-pick big" for="f_photo">
+      <div class="ring xl"><img id="f_prev" alt="" style="display:none"><span id="f_initial">＋</span></div>
+      <div><b>Student photo</b><small>Click to upload a portrait · JPG or PNG</small></div>
+    </label>
+    <input type="file" id="f_photo" accept="image/*" hidden onchange="pickPhoto(this, d => { newPhoto = d; $('f_prev').src = d; $('f_prev').style.display = 'block'; $('f_initial').style.display = 'none'; })">
+
+    <div class="divider"><span>Academic</span></div>
+    <div class="form-grid">
+      <div class="field"><label>Roll number *</label><input id="f_roll" placeholder="2026001"></div>
+      <div class="field"><label>Full name *</label><input id="f_name" placeholder="Priya Nair"></div>
+      <div class="field"><label>Course</label><select id="f_course"></select></div>
+      <div class="field"><label>Year</label><select id="f_year"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select></div>
+      <div class="field"><label>Section</label><select id="f_section"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+      <div class="field"><label>Gender</label><select id="f_gender"><option>Female</option><option>Male</option><option>Other</option></select></div>
+    </div>
+
+    <div class="divider"><span>Contact</span></div>
+    <div class="form-grid">
+      <div class="field"><label>Email</label><input id="f_email" type="email" placeholder="priya@college.edu"></div>
+      <div class="field"><label>Phone</label><input id="f_phone" placeholder="+91 98765 43210"></div>
+      <div class="field"><label>Guardian name</label><input id="f_guardian" placeholder="Parent / guardian"></div>
+      <div class="field"><label>Date of birth</label><input id="f_dob" type="date"></div>
+      <div class="field"><label>Blood group</label><select id="f_blood"><option value="">—</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></div>
+      <div class="field span2"><label>Address</label><textarea id="f_address" rows="2" placeholder="House, street, city"></textarea></div>
+    </div>
+  </div>
+  <div class="drawer-f">
+    <button class="btn ghost" onclick="closeDrawer()">Cancel</button>
+    <button class="btn primary" onclick="saveStudent()">Save student</button>
+  </div>
+</aside>
+
+<!-- ═════════ PROFILE MODAL ═════════ -->
+<div class="modal-wrap" id="modal" onclick="if (event.target === this) closeModal()">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ───────────── STATE ───────────── */
+const API = '/api';
+const $ = id => document.getElementById(id);
+const STATUSES = ['Present', 'Absent', 'Late', 'Excused'];
+const DEFAULTS = { inst: 'Greenfield College', threshold: 75, admin: 'Admin', role: 'Administrator', photo: '', courses: 'B.Tech CSE, B.Tech ECE, B.Sc Physics, B.Com, BBA, MBA' };
+let cfg = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('rollcall') || '{}'));
+let students = [], records = [], draft = {}, newPhoto = '', tmpAdminPhoto = null;
+
+const TITLES = {
+  dashboard: ['Dashboard', 'A clear view of attendance across your institution'],
+  students: ['Students', 'Profiles, contact details and individual attendance'],
+  attendance: ['Mark Attendance', 'Record the day in a few taps'],
+  reports: ['Reports', 'Filter, review, export and print attendance registers'],
+  settings: ['Settings', 'Personalise Rollcall for your institution']
+};
+
+/* ───────────── HELPERS ───────────── */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+const iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const todayStr = () => iso(new Date());
+const hue = n => [...String(n)].reduce((a, c) => a + c.charCodeAt(0), 0) * 37 % 360;
+const initials = n => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+const avatar = (s, cls = '') => s.photo
+  ? `<img class="av ${cls}" src="${s.photo}" alt="">`
+  : `<span class="av ${cls}" style="--h:${hue(s.name)}">${esc(initials(s.name))}</span>`;
+const pctColor = p => p == null ? '#9db2ae' : p >= cfg.threshold ? '#1f9d77' : p >= cfg.threshold - 10 ? '#e89b0c' : '#ef5b45';
+const courseList = () => [...new Set([...cfg.courses.split(',').map(s => s.trim()).filter(Boolean), ...students.map(s => s.course).filter(Boolean)])];
+
+function toast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  $('toasts').appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 3200);
+}
+
+/* Square-crop & shrink a photo so it stays small in the database */
+function pickPhoto(input, done) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'), size = 220, m = Math.min(img.width, img.height);
+      c.width = c.height = size;
+      c.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, size, size);
+      done(c.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* Attendance maths: Present + Late = attended, Excused is ignored */
+function stat(sid, from, to) {
+  const s = { Present: 0, Absent: 0, Late: 0, Excused: 0 };
+  records.forEach(r => {
+    if (r.student_id !== sid || (from && r.date < from) || (to && r.date > to)) return;
+    s[r.status]++;
+  });
+  const base = s.Present + s.Late + s.Absent;
+  s.pct = base ? Math.round((s.Present + s.Late) / base * 100) : null;
+  s.total = base + s.Excused;
+  return s;
+}
+function aggregate(recs) {
+  const ids = new Set(students.map(s => s.id));
+  const v = recs.filter(r => ids.has(r.student_id));
+  const attended = v.filter(r => r.status === 'Present' || r.status === 'Late').length;
+  const base = v.filter(r => r.status !== 'Excused').length;
+  return base ? Math.round(attended / base * 100) : null;
+}
+function filtered(p) {
+  const q = ($(p + 'Search') ? $(p + 'Search').value : '').toLowerCase().trim();
+  const c = $(p + 'Course').value, sec = $(p + 'Section').value;
+  return students.filter(s => (!c || s.course === c) && (!sec || s.section === sec) && (!q || (s.name + ' ' + s.roll).toLowerCase().includes(q)));
+}
+const empty = (msg, btn = '') => `<div class="empty"><div class="empty-ico">◌</div><p>${msg}</p>${btn}</div>`;
+
+/* ───────────── API ───────────── */
+async function load() {
+  try {
+    [students, records] = await Promise.all([
+      fetch(API + '/students').then(r => r.json()),
+      fetch(API + '/attendance').then(r => r.json())
+    ]);
+    renderAll();
+  } catch (e) { toast('Could not reach the API', 'err'); }
+}
+const post = (url, body) => fetch(API + url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+
+/* ───────────── NAVIGATION ───────────── */
+function go(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  $('pageTitle').textContent = TITLES[view][0];
+  $('pageSub').textContent = TITLES[view][1];
+  if (view === 'settings') fillSettings();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderAll() {
+  fillSelects(); renderDashboard(); renderStudents(); renderAttendance(); renderReport();
+}
+
+function fillSelects() {
+  const cs = courseList();
+  const opts = (all) => (all ? `<option value="">${all}</option>` : '') + cs.map(c => `<option>${esc(c)}</option>`).join('');
+  ['sCourse', 'aCourse', 'rCourse'].forEach(id => { const v = $(id).value; $(id).innerHTML = opts('All courses'); $(id).value = v; });
+  const f = $('f_course'), fv = f.value; f.innerHTML = opts(''); if (fv) f.value = fv;
+}
+
+/* ───────────── DASHBOARD ───────────── */
+const ICON = {
+  users: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.8 0 4.5 1.8 4.5 4.5"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>',
+  cross: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></svg>',
+  pulse: '<svg viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>'
+};
+
+function renderDashboard() {
+  const t = todayStr(), tr = records.filter(r => r.date === t);
+  const n = k => tr.filter(r => r.status === k).length;
+  const P = n('Present'), A = n('Absent'), L = n('Late'), E = n('Excused');
+  const total = students.length, unmarked = Math.max(total - tr.length, 0);
+  const todayPct = aggregate(tr), overall = aggregate(records);
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  const longDate = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  $('dateChip').textContent = longDate;
+  $('heroDate').textContent = longDate;
+  $('heroTitle').textContent = `${greet}, ${cfg.admin.split(' ')[0]}.`;
+  $('heroText').textContent = total
+    ? `${total} students enrolled · ${tr.length ? tr.length + ' marked today' : 'attendance not marked yet today'}.`
+    : 'Welcome! Add your first student or load sample data from Settings to get started.';
+  $('heroArt').innerHTML = `<div class="orb"><b>${todayPct == null ? '–' : todayPct + '%'}</b><span>today</span></div><i class="r1"></i><i class="r2"></i><i class="r3"></i>`;
+
+  $('stats').innerHTML = [
+    ['users', 'Total students', total, `${new Set(students.map(s => s.course)).size} courses`, 'mint'],
+    ['check', 'Attended today', P + L, `${L} arrived late`, 'leaf'],
+    ['cross', 'Absent today', A, `${E} excused`, 'coral'],
+    ['pulse', 'Overall attendance', overall == null ? '–' : overall + '%', `Minimum ${cfg.threshold}%`, 'sky']
+  ].map(([ic, label, val, sub, tone]) => `<div class="stat ${tone}"><div class="stat-ico">${ICON[ic]}</div><div><span>${label}</span><b>${val}</b><small>${sub}</small></div></div>`).join('');
+
+  /* 7-day chart */
+  const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d; });
+  $('weekChart').innerHTML = days.map(d => {
+    const p = aggregate(records.filter(r => r.date === iso(d)));
+    return `<div class="bar"><em>${p == null ? '–' : p + '%'}</em><div class="track"><i style="height:${p || 0}%"></i></div><span>${d.toLocaleDateString('en-US', { weekday: 'short' })}</span><small>${d.getDate()}</small></div>`;
+  }).join('');
+
+  /* donut */
+  const seg = [[P, '#1f9d77', 'Present'], [L, '#f2a516', 'Late'], [A, '#ef5b45', 'Absent'], [E, '#3a86d9', 'Excused'], [unmarked, '#e3eae8', 'Not marked']];
+  let acc = 0;
+  const stops = total ? seg.map(([v, c]) => { const a = acc / total * 360; acc += v; return `${c} ${a}deg ${acc / total * 360}deg`; }).join(',') : '#e3eae8 0deg 360deg';
+  $('todayDonut').innerHTML = `
+    <div class="donut-wrap">
+      <div class="donut" style="background:conic-gradient(${stops})"><div><b>${todayPct == null ? '–' : todayPct + '%'}</b><span>attended</span></div></div>
+      <ul class="legend">${seg.map(([v, c, l]) => `<li><i style="background:${c}"></i>${l}<b>${v}</b></li>`).join('')}</ul>
+    </div>`;
+
+  /* course bars */
+  const cs = [...new Set(students.map(s => s.course))];
+  $('courseBars').innerHTML = cs.length ? cs.map(c => {
+    const ids = new Set(students.filter(s => s.course === c).map(s => s.id));
+    const p = aggregate(records.filter(r => ids.has(r.student_id)));
+    return `<div class="hbar"><div><b>${esc(c)}</b><span>${p == null ? 'No data' : p + '%'}</span></div><div class="hb-track"><i style="width:${p || 0}%;background:${pctColor(p)}"></i></div></div>`;
+  }).join('') : empty('No courses yet');
+
+  /* ranked lists */
+  const ranked = students.map(s => ({ s, p: stat(s.id).pct })).filter(x => x.p !== null);
+  const row = x => `<div class="prow" onclick="openProfile(${x.s.id})">${avatar(x.s, 'sm')}<div><b>${esc(x.s.name)}</b><small>${esc(x.s.course)} · Sec ${esc(x.s.section)}</small></div><span class="chip" style="--c:${pctColor(x.p)}">${x.p}%</span></div>`;
+  const low = ranked.filter(x => x.p < cfg.threshold).sort((a, b) => a.p - b.p).slice(0, 5);
+  $('lowHint').textContent = `Below ${cfg.threshold}%`;
+  $('lowList').innerHTML = low.length ? low.map(row).join('') : empty(ranked.length ? 'Everyone is above the minimum 🎉' : 'No attendance recorded yet');
+  const top = [...ranked].sort((a, b) => b.p - a.p).slice(0, 5);
+  $('topList').innerHTML = top.length ? top.map(row).join('') : empty('No attendance recorded yet');
+}
+
+/* ───────────── STUDENTS ───────────── */
+function renderStudents() {
+  const yr = $('sYear').value;
+  const list = filtered('s').filter(s => !yr || s.year === yr);
+  $('sCount').textContent = `${list.length} of ${students.length} students`;
+  $('studentGrid').innerHTML = list.length ? list.map(s => {
+    const p = stat(s.id).pct;
+    return `<article class="scard">
+      <div class="scard-top">
+        ${avatar(s, 'lg')}
+        <div class="who"><b>${esc(s.name)}</b><small>Roll ${esc(s.roll)}</small></div>
+        <div class="pct" style="--p:${p || 0};--c:${pctColor(p)}"><span>${p == null ? '–' : p + '%'}</span></div>
+      </div>
+      <div class="tags"><span>${esc(s.course)}</span><span>Sec ${esc(s.section)}</span><span>${esc(s.year)}</span></div>
+      <dl class="mini">
+        <div><dt>Email</dt><dd>${esc(s.email || '—')}</dd></div>
+        <div><dt>Phone</dt><dd>${esc(s.phone || '—')}</dd></div>
+      </dl>
+      <div class="scard-foot">
+        <button class="btn small" onclick="openProfile(${s.id})">View profile</button>
+        <button class="btn small danger" onclick="delStudent(${s.id})">Delete</button>
+      </div>
+    </article>`;
+  }).join('') : empty(students.length ? 'No students match these filters.' : 'No students yet. Add one, or load a few samples.',
+    students.length ? '' : '<button class="btn primary" onclick="openDrawer()">+ New student</button> <button class="btn" onclick="loadSample()">Load samples</button>');
+}
+
+function openDrawer() {
+  newPhoto = '';
+  ['f_roll', 'f_name', 'f_email', 'f_phone', 'f_guardian', 'f_dob', 'f_address'].forEach(id => $(id).value = '');
+  $('f_blood').value = '';
+  $('f_prev').style.display = 'none'; $('f_initial').style.display = ''; $('f_photo').value = '';
+  $('drawer').classList.add('open'); $('drawerOverlay').classList.add('open');
+}
+function closeDrawer() { $('drawer').classList.remove('open'); $('drawerOverlay').classList.remove('open'); }
+
+async function saveStudent() {
+  const roll = $('f_roll').value.trim(), name = $('f_name').value.trim();
+  if (!roll || !name) return toast('Roll number and name are required', 'warn');
+  if (students.some(s => s.roll === roll)) return toast('That roll number already exists', 'warn');
+  await post('/students', {
+    roll, name, photo: newPhoto,
+    email: $('f_email').value, phone: $('f_phone').value, course: $('f_course').value,
+    section: $('f_section').value, year: $('f_year').value, gender: $('f_gender').value,
+    dob: $('f_dob').value, blood: $('f_blood').value, guardian: $('f_guardian').value, address: $('f_address').value
+  });
+  closeDrawer(); await load(); toast(`${name} added`);
+}
+
+async function delStudent(id) {
+  const s = students.find(x => x.id === id);
+  if (!confirm(`Delete ${s.name} and all their attendance records?`)) return;
+  await fetch(API + '/students/' + id, { method: 'DELETE' });
+  closeModal(); await load(); toast('Student deleted');
+}
+
+/* profile modal */
+function openProfile(id) {
+  const s = students.find(x => x.id === id); if (!s) return;
+  const st = stat(id);
+  const days = [...Array(30)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (29 - i)); return iso(d); });
+  const heat = days.map(d => { const r = records.find(x => x.student_id === id && x.date === d); return `<i class="hc ${r ? r.status : ''}" title="${d}: ${r ? r.status : 'No record'}"></i>`; }).join('');
+  const recent = records.filter(r => r.student_id === id).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+  const f = (l, v) => `<div><dt>${l}</dt><dd>${esc(v || '—')}</dd></div>`;
+  $('modalBody').innerHTML = `
+    <button class="icon-btn close" onclick="closeModal()">✕</button>
+    <div class="m-head">
+      ${avatar(s, 'xl')}
+      <div><h3>${esc(s.name)}</h3><p>Roll ${esc(s.roll)} · ${esc(s.course)} · ${esc(s.year)} · Sec ${esc(s.section)}</p></div>
+      <div class="pct big" style="--p:${st.pct || 0};--c:${pctColor(st.pct)}"><span>${st.pct == null ? '–' : st.pct + '%'}</span></div>
+    </div>
+    <div class="m-stats">
+      <div class="Present"><b>${st.Present}</b>Present</div><div class="Absent"><b>${st.Absent}</b>Absent</div>
+      <div class="Late"><b>${st.Late}</b>Late</div><div class="Excused"><b>${st.Excused}</b>Excused</div>
+    </div>
+    <div class="m-sec">Last 30 days</div>
+    <div class="heat">${heat}</div>
+    <div class="m-sec">Details</div>
+    <dl class="m-grid">${f('Email', s.email)}${f('Phone', s.phone)}${f('Guardian', s.guardian)}${f('Gender', s.gender)}${f('Date of birth', s.dob)}${f('Blood group', s.blood)}${f('Address', s.address)}</dl>
+    <div class="m-sec">Recent records</div>
+    <div class="recent">${recent.length ? recent.map(r => `<div><span>${r.date}</span><em class="chip ${r.status}">${r.status}</em><small>${esc(r.remark || '')}</small></div>`).join('') : '<p class="muted">No records yet.</p>'}</div>
+    <div class="m-foot"><button class="btn danger" onclick="delStudent(${s.id})">Delete student</button><button class="btn dark" onclick="closeModal()">Close</button></div>`;
+  $('modal').classList.add('open');
+}
+function closeModal() { $('modal').classList.remove('open'); }
+
+/* ───────────── MARK ATTENDANCE ───────────── */
+const getMark = sid => draft[sid] || records.find(r => r.student_id === sid && r.date === $('aDate').value) || null;
+
+function dateChanged() { draft = {}; renderAttendance(); }
+function shiftDay(n) {
+  const d = new Date($('aDate').value + 'T00:00:00'); d.setDate(d.getDate() + n);
+  if (iso(d) > todayStr()) return toast('You cannot mark a future date', 'warn');
+  $('aDate').value = iso(d); dateChanged();
+}
+
+function renderAttendance() {
+  const list = filtered('a');
+  $('aList').innerHTML = list.length ? list.map(s => {
+    const m = getMark(s.id) || { status: '', remark: '' };
+    return `<div class="arow">
+      <div class="a-who">${avatar(s)}<div><b>${esc(s.name)}</b><small>${esc(s.roll)} · ${esc(s.course)} · Sec ${esc(s.section)}</small></div></div>
+      <div class="seg">${STATUSES.map(k => `<button class="${k} ${m.status === k ? 'on' : ''}" onclick="setStatus(${s.id},'${k}')">${k}</button>`).join('')}</div>
+      <input class="remark" placeholder="Remark (optional)" value="${esc(m.remark)}" oninput="setRemark(${s.id}, this.value)">
+    </div>`;
+  }).join('') : empty('No students to show. Adjust the filters or add students.');
+  updateSummary();
+}
+function setStatus(id, k) { const m = getMark(id) || {}; draft[id] = { status: k, remark: m.remark || '' }; renderAttendance(); }
+function setRemark(id, v) { const m = getMark(id) || { status: '' }; draft[id] = { status: m.status, remark: v }; }
+function markAll(k) { filtered('a').forEach(s => { const m = getMark(s.id) || {}; draft[s.id] = { status: k, remark: k ? (m.remark || '') : '' }; }); renderAttendance(); }
+function updateSummary() {
+  const list = filtered('a'), c = { Present: 0, Absent: 0, Late: 0, Excused: 0, none: 0 };
+  list.forEach(s => { const m = getMark(s.id); c[m && m.status ? m.status : 'none']++; });
+  $('aSummary').innerHTML = STATUSES.map(k => `<span class="chip ${k}">${k} <b>${c[k]}</b></span>`).join('') + `<span class="chip none">Not marked <b>${c.none}</b></span>`;
+}
+async function saveAttendance() {
+  const date = $('aDate').value;
+  const rows = filtered('a').map(s => ({ s, m: getMark(s.id) })).filter(x => x.m && x.m.status)
+    .map(x => ({ student_id: x.s.id, date, status: x.m.status, remark: x.m.remark || '' }));
+  if (!rows.length) return toast('Mark at least one student first', 'warn');
+  await post('/attendance', rows);
+  draft = {}; await load(); toast(`Attendance saved for ${rows.length} students`);
+}
+
+/* ───────────── REPORTS ───────────── */
+function reportRows() {
+  const from = $('rFrom').value, to = $('rTo').value, low = $('rLow').checked;
+  return filtered('r').map(s => ({ s, st: stat(s.id, from, to) })).filter(x => !low || (x.st.pct !== null && x.st.pct < cfg.threshold));
+}
+function renderReport() {
+  const rows = reportRows(), from = $('rFrom').value, to = $('rTo').value;
+  const ids = new Set(rows.map(x => x.s.id));
+  const recs = records.filter(r => ids.has(r.student_id) && (!from || r.date >= from) && (!to || r.date <= to));
+  const avg = aggregate(recs), below = rows.filter(x => x.st.pct !== null && x.st.pct < cfg.threshold).length;
+  $('rStats').innerHTML = [
+    ['Students listed', rows.length], ['Average attendance', avg == null ? '–' : avg + '%'],
+    ['Below minimum', below], ['Records in range', recs.length]
+  ].map(([l, v]) => `<div class="stat flat"><div><span>${l}</span><b>${v}</b></div></div>`).join('');
+
+  $('rBody').innerHTML = rows.length ? rows.map(({ s, st }) => {
+    const p = st.pct, label = p == null ? 'No data' : p >= cfg.threshold ? 'Good' : p >= cfg.threshold - 10 ? 'Warning' : 'Critical';
+    return `<tr>
+      <td><div class="cell-who">${avatar(s, 'sm')}<b>${esc(s.name)}</b></div></td>
+      <td>${esc(s.roll)}</td><td>${esc(s.course)}</td><td>${esc(s.section)}</td>
+      <td>${st.Present}</td><td>${st.Absent}</td><td>${st.Late}</td><td>${st.Excused}</td>
+      <td><div class="mbar"><div><i style="width:${p || 0}%;background:${pctColor(p)}"></i></div><b>${p == null ? '–' : p + '%'}</b></div></td>
+      <td><span class="chip" style="--c:${pctColor(p)}">${label}</span></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="10">${empty('No students match these filters.')}</td></tr>`;
+}
+function exportCSV() {
+  const rows = [['Roll', 'Name', 'Course', 'Section', 'Year', 'Present', 'Absent', 'Late', 'Excused', 'Attendance %']];
+  reportRows().forEach(({ s, st }) => rows.push([s.roll, s.name, s.course, s.section, s.year, st.Present, st.Absent, st.Late, st.Excused, st.pct == null ? '' : st.pct]));
+  const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'attendance-report-' + todayStr() + '.csv';
+  a.click();
+  toast('Report exported');
+}
+
+/* ───────────── SETTINGS ───────────── */
+function applyCfg() {
+  $('instName').textContent = cfg.inst; $('meName').textContent = cfg.admin; $('meRole').textContent = cfg.role;
+  $('meInitial').textContent = initials(cfg.admin);
+  $('meImg').style.display = cfg.photo ? 'block' : 'none'; $('meInitial').style.display = cfg.photo ? 'none' : '';
+  if (cfg.photo) $('meImg').src = cfg.photo;
+  $('railThreshold').textContent = cfg.threshold + '%'; $('railBar').style.width = cfg.threshold + '%';
+}
+function fillSettings() {
+  tmpAdminPhoto = null;
+  $('setAdmin').value = cfg.admin; $('setRole').value = cfg.role; $('setInst').value = cfg.inst;
+  $('setThresh').value = cfg.threshold; $('setThreshVal').textContent = cfg.threshold + '%'; $('setCourses').value = cfg.courses;
+  $('setInitial').textContent = initials(cfg.admin);
+  $('setImg').style.display = cfg.photo ? 'block' : 'none'; $('setInitial').style.display = cfg.photo ? 'none' : '';
+  if (cfg.photo) $('setImg').src = cfg.photo;
+}
+function saveSettings() {
+  cfg = { inst: $('setInst').value || DEFAULTS.inst, admin: $('setAdmin').value || DEFAULTS.admin, role: $('setRole').value || DEFAULTS.role,
+          threshold: +$('setThresh').value, courses: $('setCourses').value || DEFAULTS.courses, photo: tmpAdminPhoto !== null ? tmpAdminPhoto : cfg.photo };
+  localStorage.setItem('rollcall', JSON.stringify(cfg));
+  applyCfg(); renderAll(); toast('Settings saved');
+}
+
+/* Sample data: handy for a first look */
+async function loadSample() {
+  const names = ['Aarav Sharma', 'Priya Nair', 'Karthik Raman', 'Ananya Iyer', 'Mohammed Faizal', 'Sneha Reddy', 'Rohan Mehta', 'Divya Krishnan'];
+  const bias = [0.96, 0.92, 0.7, 0.86, 0.62, 0.93, 0.78, 0.88];
+  const cs = courseList(), base = students.length;
+  toast('Adding sample students…');
+  const ids = [];
+  for (let i = 0; i < names.length; i++) {
+    const first = names[i].split(' ')[0].toLowerCase();
+    const r = await post('/students', {
+      roll: '2026' + String(base + i + 1).padStart(3, '0'), name: names[i], email: first + '@college.edu', phone: '+91 98' + (40000000 + i * 1234567),
+      course: cs[i % cs.length], section: 'ABCD'[i % 4], year: ['1st Year', '2nd Year', '3rd Year', '4th Year'][i % 4],
+      gender: i % 2 ? 'Female' : 'Male', guardian: 'Parent of ' + names[i].split(' ')[0], blood: ['O+', 'A+', 'B+', 'AB+'][i % 4], dob: '2005-0' + (1 + i % 9) + '-1' + (i % 9), address: 'Chennai, Tamil Nadu', photo: ''
+    });
+    ids.push(r.id);
+  }
+  const rows = []; let d = new Date(), made = 0;
+  while (made < 12) {
+    d.setDate(d.getDate() - 1);
+    if (d.getDay() === 0 || d.getDay() === 6) continue;
+    made++;
+    ids.forEach((id, i) => {
+      const x = Math.random(), st = x < bias[i] ? (Math.random() < 0.1 ? 'Late' : 'Present') : (Math.random() < 0.15 ? 'Excused' : 'Absent');
+      rows.push({ student_id: id, date: iso(d), status: st, remark: '' });
+    });
+  }
+  await post('/attendance', rows);
+  await load(); toast('Sample students and 12 school days added');
+}
+
+/* ───────────── INIT ───────────── */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeModal(); } });
+$('aDate').value = todayStr(); $('aDate').max = todayStr();
+applyCfg();
+load();
+</script>
+</body>
+</html>
